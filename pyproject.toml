@@ -1,0 +1,18 @@
+[project]
+name = "aihelp"
+version = "0.1.0"
+description = "Ask OpenAI about a Python object with runtime metadata and optional help() snippets."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "openai>=2.15.0",
+]
+
+[project.optional-dependencies]
+embeddings = [
+    "transformers>=4.46.0",
+    "torch>=2.4.0",
+    "sentencepiece>=0.1.99",
+]
+dataframe = ["pandas>=2.2.0"]
+jupyter = ["ipywidgets>=8.1.8"]

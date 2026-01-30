@@ -1,6 +1,6 @@
 [project]
 name = "helpit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Ask OpenAI-compatible models about a Python object with runtime metadata and optional help() snippets."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -16,3 +16,7 @@ embeddings = [
 ]
 dataframe = ["pandas>=2.2.0"]
 jupyter = ["ipywidgets>=8.1.8"]
+
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"

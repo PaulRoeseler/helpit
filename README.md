@@ -7,7 +7,7 @@
 
 `helpit` lets you ask questions about `help()` output and get answers tailored to the **exact object in front of you**.
 
-<video src="assets/helpit_gif.mp4" width="720" controls muted loop></video>
+![helpit demo](assets/helpit.gif)
 
 ---
 

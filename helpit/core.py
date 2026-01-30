@@ -8,9 +8,9 @@ try:
 except Exception:
     OpenAI = None  # type: ignore
 
-from aihelp.docs import capture_help_text, chunk_text
-from aihelp.embeddings import EmbeddingBackend, _get_default_embedder, rank_chunks
-from aihelp.object_info import _short_repr, object_header
+from .docs import capture_help_text, chunk_text
+from .embeddings import EmbeddingBackend, _get_default_embedder, rank_chunks
+from .object_info import _short_repr, object_header
 
 
 def aihelp(
@@ -77,7 +77,7 @@ def aihelp(
     client = openai_client
     if client is None:
         if OpenAI is None:
-            raise RuntimeError("openai package not installed; install openai>=2.15.0 to call aihelp.")
+            raise RuntimeError("openai package not installed; install openai>=2.15.0 to call helpit.")
         client = OpenAI()
 
     response = client.responses.create(

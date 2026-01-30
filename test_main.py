@@ -2,10 +2,10 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
-import aihelp
+import helpit
 
 
-class DummyEmbedder(aihelp.EmbeddingBackend):
+class DummyEmbedder(helpit.EmbeddingBackend):
     def embed(self, texts):
         vectors = []
         for t in texts:
@@ -20,11 +20,11 @@ class DummyEmbedder(aihelp.EmbeddingBackend):
         return vectors
 
 
-class AiHelpTests(unittest.TestCase):
+class HelpitTests(unittest.TestCase):
     def test_default_embedder_singleton_used_when_none_passed(self):
         help_text = "first chunk text\n\nsecond chunk text"
 
-        class CountingEmbedder(aihelp.EmbeddingBackend):
+        class CountingEmbedder(helpit.EmbeddingBackend):
             def __init__(self):
                 self.calls = 0
 
@@ -38,9 +38,9 @@ class AiHelpTests(unittest.TestCase):
         mock_resp.output_text = "ok"
         mock_client.responses.create.return_value = mock_resp
 
-        with patch("aihelp.core.capture_help_text", return_value=help_text), patch("aihelp.core._get_default_embedder", return_value=stub):
-            aihelp.aihelp(lambda x: x, "q1", add_documentation=True, openai_client=mock_client)
-            aihelp.aihelp(lambda x: x, "q2", add_documentation=True, openai_client=mock_client)
+        with patch("helpit.core.capture_help_text", return_value=help_text), patch("helpit.core._get_default_embedder", return_value=stub):
+            helpit.aihelp(lambda x: x, "q1", add_documentation=True, openai_client=mock_client)
+            helpit.aihelp(lambda x: x, "q2", add_documentation=True, openai_client=mock_client)
 
         self.assertEqual(stub.calls, 2, "default embedder should be reused across calls")
 
@@ -51,10 +51,10 @@ class AiHelpTests(unittest.TestCase):
                     raise RuntimeError("no details")
                 raise AttributeError
 
-        hdr = aihelp.object_header(BadAttrs())
+        hdr = helpit.object_header(BadAttrs())
         self.assertIn("repr", hdr)
 
-    def test_aihelp_survives_help_failure(self):
+    def test_helpit_survives_help_failure(self):
         class NoHelp:
             pass
 
@@ -63,8 +63,8 @@ class AiHelpTests(unittest.TestCase):
         mock_resp.output_text = "ok"
         mock_client.responses.create.return_value = mock_resp
 
-        with patch("aihelp.core.capture_help_text", side_effect=RuntimeError("boom")):
-            result = aihelp.aihelp(NoHelp(), "q", add_documentation=True, openai_client=mock_client)
+        with patch("helpit.core.capture_help_text", side_effect=RuntimeError("boom")):
+            result = helpit.aihelp(NoHelp(), "q", add_documentation=True, openai_client=mock_client)
 
         self.assertEqual(result, "ok")
         _, kwargs = mock_client.responses.create.call_args
@@ -78,8 +78,8 @@ class AiHelpTests(unittest.TestCase):
         mock_resp.output_text = "ok"
         mock_client.responses.create.return_value = mock_resp
 
-        with patch("aihelp.core.capture_help_text", return_value=help_text):
-            result = aihelp.aihelp(
+        with patch("helpit.core.capture_help_text", return_value=help_text):
+            result = helpit.aihelp(
                 lambda x: x,
                 "question about first",
                 add_documentation=True,
@@ -101,8 +101,8 @@ class AiHelpTests(unittest.TestCase):
         mock_resp.output_text = "ok"
         mock_client.responses.create.return_value = mock_resp
 
-        with patch("aihelp.core.capture_help_text") as cap_help:
-            result = aihelp.aihelp(
+        with patch("helpit.core.capture_help_text") as cap_help:
+            result = helpit.aihelp(
                 123,
                 "plain question",
                 add_documentation=False,

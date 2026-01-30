@@ -1,9 +1,9 @@
-"""Runnable examples for calling aihelp with and without documentation retrieval."""
+"""Runnable examples for calling helpit with and without documentation retrieval."""
 
 import json
 from typing import Sequence
 
-import aihelp
+import helpit
 
 
 class _StaticResponse:
@@ -27,7 +27,7 @@ class StubOpenAIClient:
         self.responses = StubResponses(self)
 
 
-class TinyEmbedder(aihelp.EmbeddingBackend):
+class TinyEmbedder(helpit.EmbeddingBackend):
     def embed(self, texts: Sequence[str]):
         vecs = []
         for t in texts:
@@ -37,17 +37,17 @@ class TinyEmbedder(aihelp.EmbeddingBackend):
 
 
 def demo_basic():
-    """Call aihelp without documentation retrieval."""
+    """Call helpit without documentation retrieval."""
     client = StubOpenAIClient("Stubbed answer about len.")
-    result = aihelp.aihelp(len, "What does len return for a list?", openai_client=client)
+    result = helpit.aihelp(len, "What does len return for a list?", openai_client=client)
     print("Result:", result)
     print("Payload sent:", client.calls[-1]["input"])
 
 
 def demo_with_documentation():
-    """Call aihelp with help()-based documentation retrieval."""
+    """Call helpit with help()-based documentation retrieval."""
     client = StubOpenAIClient("Doc-aware stubbed answer.")
-    result = aihelp.aihelp(
+    result = helpit.aihelp(
         range,
         "How do I use start/stop/step?",
         add_documentation=True,

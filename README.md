@@ -1,4 +1,4 @@
-# aihelp
+# helpit
 
 `help()` is great… until it isn’t.
 
@@ -7,13 +7,13 @@ It often dumps a wall of documentation that:
 - isn’t tailored to *your* question
 - is verbose when you just want the “do this” answer
 
-**aihelp** flips that: it inspects the **runtime object you already have**, packages up **safe, useful metadata** (type/module/signature/fields + lightweight hints for things like pandas/torch/pathlib), and asks a small OpenAI model to answer **your specific question** quickly.
+**helpit** flips that: it inspects the **runtime object you already have**, packages up **safe, useful metadata** (type/module/signature/fields + lightweight hints for things like pandas/torch/pathlib), and asks a small OpenAI model to answer **your specific question** quickly.
 
 If the object is complex or the answer likely lives in docs, you can turn on:
 
 - `add_documentation=True`
 
-…and `aihelp` will grab the object’s `help()` output, chunk it, and attach only the **most relevant snippets** (picked via embeddings using `intfloat/multilingual-e5-small`) so the model can ground its answer.
+…and `helpit` will grab the object’s `help()` output, chunk it, and attach only the **most relevant snippets** (picked via embeddings using `intfloat/multilingual-e5-small`) so the model can ground its answer.
 
 ---
 
@@ -38,7 +38,7 @@ uv sync
 ## Quickstart 
 
 ```python
-from aihelp import aihelp
+from helpit import aihelp
 
 def scale(x, factor=2):
     return x * factor
@@ -54,7 +54,7 @@ Use this when you suspect the model might need extra *documentation* to be corre
 
 ```python
 from openai import OpenAI
-from aihelp import aihelp
+from helpit import aihelp
 
 client = OpenAI()  # expects OPENAI_API_KEY
 
@@ -73,6 +73,33 @@ answer = aihelp(
 
 print(answer)
 ```
+
+---
+
+## Using local OpenAI-compatible servers (Ollama, vLLM, etc.)
+
+`helpit` talks to the OpenAI **Responses** API. Any local server that exposes a compatible `/v1/responses` endpoint can be used by passing a custom `OpenAI` client:
+
+```python
+from openai import OpenAI
+from helpit import aihelp
+
+client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")  # Ollama example
+
+print(
+    aihelp(
+        len,
+        "How does len behave on a list?",
+        model="llama3.2",            # whatever your server calls the model
+        max_output_tokens=200,
+        openai_client=client,
+    )
+)
+```
+
+- **Ollama**: `/v1/responses` is supported in v0.13.3+ (stateless only). Use any token as `api_key`, set `base_url` to your Ollama host, and pick a local model name (e.g., `llama3.2`, `qwen2.5`).
+- **vLLM**: run the OpenAI-compatible server and point `base_url` to it; use the served model name.
+- If your backend lacks `/v1/responses`, upgrade or run a thin proxy that maps Responses requests to chat/completions, or fork `helpit` to call chat/completions directly.
 
 ---
 
@@ -109,4 +136,3 @@ Runs two stubbed calls (no network): a basic query and a doc-enriched query usin
 ```bash
 python -m unittest -v
 ```
-

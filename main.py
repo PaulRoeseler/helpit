@@ -1,6 +1,5 @@
-"""Compatibility wrapper; prefer importing from the aihelp package."""
+"""Compatibility wrapper; prefer importing from the helpit package."""
 
-from aihelp import EmbeddingBackend, HFEmbeddingBackend, aihelp, object_header
+from helpit import EmbeddingBackend, HFEmbeddingBackend, aihelp, object_header
 
 __all__ = ["aihelp", "EmbeddingBackend", "HFEmbeddingBackend", "object_header"]
-

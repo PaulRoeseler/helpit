@@ -1,7 +1,7 @@
 [project]
-name = "aihelp"
+name = "helpit"
 version = "0.1.0"
-description = "Ask OpenAI about a Python object with runtime metadata and optional help() snippets."
+description = "Ask OpenAI-compatible models about a Python object with runtime metadata and optional help() snippets."
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [

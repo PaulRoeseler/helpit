@@ -3,33 +3,44 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
-try:
-    from openai import OpenAI  # type: ignore
-except Exception:
-    OpenAI = None  # type: ignore
-
 from .docs import capture_help_text, chunk_text
 from .embeddings import EmbeddingBackend, _get_default_embedder, rank_chunks
 from .object_info import _short_repr, object_header
 
+_DEFAULT_CLIENT: Optional[Any] = None
 
-def aihelp(
+
+def set_default_client(client: Optional[Any]) -> None:
+    """
+    Set a process-wide default OpenAI-compatible client used when helpit() is
+    called without an explicit openai_client. Pass None to clear.
+    """
+    global _DEFAULT_CLIENT
+    _DEFAULT_CLIENT = client
+
+
+def helpit(
     fn_or_value: Any,
     question: str,
     *,
     model: str = "gpt-5-mini",
     verbosity: str = "low",
     reasoning_effort: str = "minimal",
-    max_output_tokens: int = 250,
+    max_output_tokens: int = 500,
     add_documentation: bool = False,
     top_k_docs: int = 3,
     chunk_chars: int = 900,
     overlap_chars: int = 150,
     embedder: Optional[EmbeddingBackend] = None,
-    openai_client: Any = None,
-) -> str:
+    openai_client: Optional[Any] = None,
+    echo: bool = False,
+) -> Optional[str]:
     """
     Ask OpenAI about a function/value with optional auto-doc retrieval via help().
+    Requires an OpenAI-compatible client passed via `openai_client` or configured
+    once via set_default_client().
+    Always prints the answer (like built-in help()).
+    Returns the string only when `echo=True`; otherwise returns None to avoid duplicate REPL output.
     """
     try:
         header = object_header(fn_or_value)
@@ -69,16 +80,16 @@ def aihelp(
 
     instructions = (
         "You are a concise Python assistant. Use the provided structured info to answer. "
-        "If key runtime info is missing, ask for exactly what you need (e.g., shape). "
         "Output: (1) short explanation (2) minimal code snippet. "
         "If documentation_chunks are present, treat them as authoritative documentation for the object."
     )
 
-    client = openai_client
+    client = openai_client if openai_client is not None else _DEFAULT_CLIENT
     if client is None:
-        if OpenAI is None:
-            raise RuntimeError("openai package not installed; install openai>=2.15.0 to call helpit.")
-        client = OpenAI()
+        raise ValueError(
+            "openai_client is required. Pass an OpenAI() client or compatible Responses API client, "
+            "or call set_default_client(OpenAI(...)) once per process."
+        )
 
     response = client.responses.create(
         model=model,
@@ -89,7 +100,9 @@ def aihelp(
         max_output_tokens=max_output_tokens,
     )
 
-    return getattr(response, "output_text", response)
+    output_text = getattr(response, "output_text", response)
+    print(output_text)
+    return output_text if echo else None
 
 
-__all__ = ["aihelp"]
+__all__ = ["helpit", "set_default_client"]

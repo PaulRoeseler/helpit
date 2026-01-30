@@ -1,138 +1,125 @@
 # helpit
 
-`help()` is great… until it isn’t.
+[![PyPI](https://img.shields.io/pypi/v/helpit.svg)](https://pypi.org/project/helpit/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-It often dumps a wall of documentation that:
-- isn’t tailored to *your* object (its current attributes, fields, shapes, dtypes, etc.)
-- isn’t tailored to *your* question
-- is verbose when you just want the “do this” answer
+**Python's `help()` is great… until it isn’t.**
 
-**helpit** flips that: it inspects the **runtime object you already have**, packages up **safe, useful metadata** (type/module/signature/fields + lightweight hints for things like pandas/torch/pathlib), and asks a small OpenAI model to answer **your specific question** quickly.
+`helpit` lets you ask questions about `help()` output and get answers tailored to the **exact object in front of you**.
 
-If the object is complex or the answer likely lives in docs, you can turn on:
-
-- `add_documentation=True`
-
-…and `helpit` will grab the object’s `help()` output, chunk it, and attach only the **most relevant snippets** (picked via embeddings using `intfloat/multilingual-e5-small`) so the model can ground its answer.
+<video src="assets/helpit_gif.mp4" width="720" controls muted loop></video>
 
 ---
 
 ## Install
 
-### Option A: venv + editable install
-
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
-````
-
-### Option B: uv
-
-```bash
-uv sync
+pip install helpit
 ```
 
 ---
 
-## Quickstart 
-
-```python
-from helpit import aihelp
-
-def scale(x, factor=2):
-    return x * factor
-
-print(aihelp(scale, "How do I use this to double a list?"))
-````
-
----
-
-## When things get tricky: add doc snippets
-
-Use this when you suspect the model might need extra *documentation* to be correct
+## Quickstart
 
 ```python
 from openai import OpenAI
-from helpit import aihelp
+from helpit import helpit, set_default_client
 
-client = OpenAI()  # expects OPENAI_API_KEY
+set_default_client(OpenAI())  
 
-# Example: a built-in function where you want details grounded in docs
-answer = aihelp(
+import torch
+
+x = torch.randn(1, 32, 1)
+helpit(
+    x.squeeze,
+    "How do I remove the last dimension and keep the leading dim?",
+)
+```
+
+---
+
+## Examples
+
+```python
+import pandas as pd
+from helpit import helpit
+
+df = pd.DataFrame({"city": [None, "ZRH", None], "sales": [3, 10, 2]})
+
+helpit(df, "Group by city, keep NaNs, and sum sales—what's the right dropna setting?")
+```
+
+
+```python
+from helpit import helpit
+
+def stream():
+    for i in range(1_000_000):
+        yield i
+
+it = stream()
+helpit(it, "How do I safely consume only the first 10 items without exhausting the iterator?")
+```
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from helpit import helpit
+
+rf = RandomForestClassifier(
+    n_estimators=300,
+    max_depth=None,
+    min_samples_split=2,
+    min_samples_leaf=1,
+    max_features="sqrt",
+    random_state=0,
+)
+
+helpit(rf, "Which hyperparameters matter most for overfitting here? Show how to adjust them.")
+```
+
+
+---
+
+## When docs matter 📚 (grounded answers)
+
+`helpit` can attach the most relevant `help()` snippets when `add_documentation=True`, keeping answers grounded without dumping full docs.
+
+```python
+from transformers import pipeline
+from helpit import helpit
+
+pipe = pipeline("sentiment-analysis")
+
+helpit(pipe, "How does this pipeline work?", add_documentation=True)
+```
+
+---
+
+## Run locally 🏠 (fast + private)
+
+`helpit` talks to the OpenAI **Responses API**. Any compatible local server works.
+
+```python
+from openai import OpenAI
+from helpit import helpit
+
+client = OpenAI(
+    base_url="http://localhost:11434/v1",
+    api_key="ollama",   # any token works
+)
+
+helpit(
     len,
-    "How does len behave on nested lists, and what errors should I expect?",
-    model="gpt-5-mini",
-    verbosity="low",
-    reasoning_effort="minimal",
-    max_output_tokens=250,
-    add_documentation=True,
-    top_k_docs=2,
+    "How does len behave on nested lists?",
+    model="llama3.2",
     openai_client=client,
 )
-
-print(answer)
 ```
-
----
-
-## Using local OpenAI-compatible servers (Ollama, vLLM, etc.)
-
-`helpit` talks to the OpenAI **Responses** API. Any local server that exposes a compatible `/v1/responses` endpoint can be used by passing a custom `OpenAI` client:
-
-```python
-from openai import OpenAI
-from helpit import aihelp
-
-client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")  # Ollama example
-
-print(
-    aihelp(
-        len,
-        "How does len behave on a list?",
-        model="llama3.2",            # whatever your server calls the model
-        max_output_tokens=200,
-        openai_client=client,
-    )
-)
-```
-
-- **Ollama**: `/v1/responses` is supported in v0.13.3+ (stateless only). Use any token as `api_key`, set `base_url` to your Ollama host, and pick a local model name (e.g., `llama3.2`, `qwen2.5`).
-- **vLLM**: run the OpenAI-compatible server and point `base_url` to it; use the served model name.
-- If your backend lacks `/v1/responses`, upgrade or run a thin proxy that maps Responses requests to chat/completions, or fork `helpit` to call chat/completions directly.
-
----
-
-## Parameters
-
-* **fn_or_value**: object or callable to describe
-* **question**: text passed to the model
-* **model**: OpenAI Responses model name
-* **verbosity**: value for Responses API `text.verbosity`
-* **reasoning_effort**: value for Responses API `reasoning.effort`
-* **max_output_tokens**: cap for model output tokens
-* **add_documentation**: when `True`, include ranked `help()` passages
-* **top_k_docs**: maximum doc chunks to attach
-* **chunk_chars**: maximum characters per `help()` chunk
-* **overlap_chars**: overlap size between chunks
-* **embedder**: `EmbeddingBackend` implementation; defaults to HF `multilingual-e5-small`
-* **openai_client**: OpenAI client or stub; defaults to `OpenAI()`
-
----
-
-
-## Offline demo
-
-```bash
-python examples_usage.py
-```
-
-Runs two stubbed calls (no network): a basic query and a doc-enriched query using a tiny deterministic embedder.
 
 ---
 
 ## Tests
 
 ```bash
-python -m unittest -v
+python3 -m unittest discover -s tests -v
 ```

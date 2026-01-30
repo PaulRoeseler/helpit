@@ -3,7 +3,7 @@
 import json
 from typing import Sequence
 
-import helpit
+from helpit import EmbeddingBackend, helpit
 
 
 class _StaticResponse:
@@ -27,7 +27,7 @@ class StubOpenAIClient:
         self.responses = StubResponses(self)
 
 
-class TinyEmbedder(helpit.EmbeddingBackend):
+class TinyEmbedder(EmbeddingBackend):
     def embed(self, texts: Sequence[str]):
         vecs = []
         for t in texts:
@@ -39,15 +39,15 @@ class TinyEmbedder(helpit.EmbeddingBackend):
 def demo_basic():
     """Call helpit without documentation retrieval."""
     client = StubOpenAIClient("Stubbed answer about len.")
-    result = helpit.aihelp(len, "What does len return for a list?", openai_client=client)
-    print("Result:", result)
+    helpit(len, "What does len return for a list?", openai_client=client, echo=False)
+    print("Returned value when echo=False:", None)
     print("Payload sent:", client.calls[-1]["input"])
 
 
 def demo_with_documentation():
     """Call helpit with help()-based documentation retrieval."""
     client = StubOpenAIClient("Doc-aware stubbed answer.")
-    result = helpit.aihelp(
+    result = helpit(
         range,
         "How do I use start/stop/step?",
         add_documentation=True,
@@ -55,6 +55,7 @@ def demo_with_documentation():
         chunk_chars=200,
         overlap_chars=40,
         openai_client=client,
+        echo=True,
     )
     print("Result:", result)
     print("Top doc chunks attached:", json.loads(client.calls[-1]["input"])["documentation_chunks"])

@@ -173,9 +173,9 @@ def _popular_library_extras(obj: Any, *, max_names: int) -> Dict[str, Any]:
 def object_header(
     obj: Any,
     *,
-    max_repr_chars: int = 240,
+    max_repr_chars: int = 1000,
     max_attrs: int = 30,
-    max_names: int = 12,
+    max_names: int = 30,
     include_public_attrs_sample: bool = True,
 ) -> Dict[str, Any]:
     tm = _type_module(obj)
